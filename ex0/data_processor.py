@@ -108,6 +108,7 @@ class LogProcessor(DataProcessor):
 
 def main() -> None:
     print("=== Code Nexus - Data Processor ===")
+
     nproc = NumericProcessor()
     print()
     print("Testing Numeric Processor...")
@@ -123,9 +124,20 @@ def main() -> None:
     print(" Processing data:", datalist_num)
     nproc.ingest(datalist_num)
     print(" Extracting 3 values...")
-    for i in range(3):
+    for _ in range(3):
         rank, value = nproc.output()
-    print(f" Numeric value {rank}: {value}")
+        print(f" Numeric value {rank}: {value}")
+
+    tproc = TextProcessor()
+    print()
+    print("Testing Text Processor...")
+    print(" Trying to validate input '42':", tproc.validate(42))
+    datalist_txt: list[str] = ['Hello', 'Nexus', 'World']
+    print(" Processing data:", datalist_txt)
+    tproc.ingest(datalist_txt)
+    print(" Extracting 1 value...")
+    print("Text value 0:", tproc.output()[1])
+     
 
 
 if __name__ == "__main__":
