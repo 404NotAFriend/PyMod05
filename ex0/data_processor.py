@@ -143,15 +143,15 @@ def main() -> None:
     print("Testing Log Processor...")
     print(" Trying to validate input 'Hello':", lproc.validate('Hello'))
     datalist_log: list[dict[str, str]] = [
-        {'log_level': 'NOTICE', 'log_message': 'Connection to Server'},
-        {'log_level': 'ERROR', 'log_message': 'Unauthorized Access!!'}
+        {'log_level': 'NOTICE', 'log_message': 'Connection to server'},
+        {'log_level': 'ERROR', 'log_message': 'Unauthorized access!!'}
     ]
     print(" Processing data:", datalist_log)
     lproc.ingest(datalist_log)
     print(" Extracting 2 values...")
     for _ in range(2):
         rank, value = lproc.output()
-        print(f" Numeric value {rank}: {value}")
+        print(f" Log entry {rank}: {value}")
 
 
 if __name__ == "__main__":
