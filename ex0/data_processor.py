@@ -137,7 +137,6 @@ def main() -> None:
     tproc.ingest(datalist_txt)
     print(" Extracting 1 value...")
     print("Text value 0:", tproc.output()[1])
-     
 
 
 if __name__ == "__main__":
