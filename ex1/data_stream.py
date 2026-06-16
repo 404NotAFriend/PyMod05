@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 from abc import ABC, abstractmethod
 from typing import Any
-import typing
 
 
 class DataProcessor(ABC):
@@ -21,6 +20,16 @@ class DataProcessor(ABC):
         if not self._storage:
             raise IndexError("No data available to output")
         return self._storage.pop(0)
+
+    def get_name(self) -> str:
+        name = self.__class__.__name__
+        return name.replace("Processor", " Processor").strip()
+
+    def get_total(self) -> int:
+        return self._rank
+
+    def get_remaining(self) -> int:
+        return len(self._storage)
 
 
 class NumericProcessor(DataProcessor):
@@ -114,7 +123,7 @@ class DataStream:
     def register_processor(self, proc: DataProcessor) -> None:
         self._registered.append(proc)
 
-    def process_stream(self, stream: list[typing.Any]) -> None:
+    def process_stream(self, stream: list[Any]) -> None:
         for element in stream:
             validated: bool = False
             for proc in self._registered:
@@ -126,58 +135,62 @@ class DataStream:
                 print("DataStream error",
                       f"- Can't process element in stream: {element}")
 
-
     def print_processors_stats(self) -> None:
-        pass
+        print("== DataStream statistics ==")
+        if len(self._registered) == 0:
+            print("No processor found, no data")
+            return
+        for proc in self._registered:
+            print(f"{proc.get_name()}:",
+                  f"total {proc.get_total()} items processed,",
+                  f"remaining {proc.get_remaining()} on processor")
 
+
+BATCH: list[Any] = [
+    'Hello world',
+    [3.14, -1, 2.71],
+    [
+        {'log_level': 'WARNING',
+         'log_message': 'Telnet access! Use ssh instead'},
+        {'log_level': 'INFO', 'log_message': 'User wil is connected'}
+    ],
+    42,
+    ['Hi', 'five']
+]
 
 
 def main() -> None:
-    print("=== Code Nexus - Data Processor ===")
-
+    print("=== Code Nexus - Data Stream ===")
+    print()
+    print("Initialize Data Stream...")
+    dstream = DataStream()
+    dstream.print_processors_stats()
+    print()
+    print("Registering Numeric Processor")
+    print()
     nproc = NumericProcessor()
-    print()
-    print("Testing Numeric Processor...")
-    print(" Trying to validate input '42':", nproc.validate(42))
-    print(" Trying to validate input 'Hello':", nproc.validate('Hello'))
-    print(" Test invalid ingestion of string 'foo' without prior validation:")
-    try:
-        nproc.ingest('foo')  # type: ignore[arg-type]
-        print("Something went wrong:[")
-    except TypeError as e:
-        print(" Got exception:", e)
-    datalist_num: list[int | float] = [1, 2, 3, 4, 5]
-    print(" Processing data:", datalist_num)
-    nproc.ingest(datalist_num)
-    print(" Extracting 3 values...")
-    for _ in range(3):
-        rank, value = nproc.output()
-        print(f" Numeric value {rank}: {value}")
-
     tproc = TextProcessor()
-    print()
-    print("Testing Text Processor...")
-    print(" Trying to validate input '42':", tproc.validate(42))
-    datalist_txt: list[str] = ['Hello', 'Nexus', 'World']
-    print(" Processing data:", datalist_txt)
-    tproc.ingest(datalist_txt)
-    print(" Extracting 1 value...")
-    print(" Text value 0:", tproc.output()[1])
-
     lproc = LogProcessor()
+    dstream.register_processor(nproc)
+    print("Send first batch of data on stream:", BATCH)
+    dstream.process_stream(BATCH)
+    dstream.print_processors_stats()
     print()
-    print("Testing Log Processor...")
-    print(" Trying to validate input 'Hello':", lproc.validate('Hello'))
-    datalist_log: list[dict[str, str]] = [
-        {'log_level': 'NOTICE', 'log_message': 'Connection to server'},
-        {'log_level': 'ERROR', 'log_message': 'Unauthorized access!!'}
-    ]
-    print(" Processing data:", datalist_log)
-    lproc.ingest(datalist_log)
-    print(" Extracting 2 values...")
+    print("Registering other data processors")
+    dstream.register_processor(tproc)
+    dstream.register_processor(lproc)
+    print("Send the same batch again")
+    dstream.process_stream(BATCH)
+    dstream.print_processors_stats()
+    print()
+    print("Consume some elements from the data processors:",
+          "Numeric 3, Text 2, Log 1")
+    for _ in range(3):
+        nproc.output()
     for _ in range(2):
-        rank, value = lproc.output()
-        print(f" Log entry {rank}: {value}")
+        tproc.output()
+    lproc.output()
+    dstream.print_processors_stats()
 
 
 if __name__ == "__main__":
