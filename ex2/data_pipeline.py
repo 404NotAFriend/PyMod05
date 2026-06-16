@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from abc import ABC, abstractmethod
 from typing import Any
+from typing import Protocol
 
 
 class DataProcessor(ABC):
@@ -30,6 +31,11 @@ class DataProcessor(ABC):
 
     def get_remaining(self) -> int:
         return len(self._storage)
+
+
+class ExportPlugin(Protocol):
+    def process_output(self, data: list[tuple[int, str]]) -> None:
+        pass
 
 
 class NumericProcessor(DataProcessor):
@@ -144,6 +150,26 @@ class DataStream:
             print(f"{proc.get_name()}:",
                   f"total {proc.get_total()} items processed,",
                   f"remaining {proc.get_remaining()} on processor")
+
+    def output_pipeline(self, nb: int, plugin: ExportPlugin) -> None:
+        for proc in self._registered:
+            collected: list[tuple[int, str]] = []
+            for _ in range(nb):
+                try:
+                    collected.append(proc.output())
+                except IndexError:
+                    break
+            if collected:
+                plugin.process_output(collected)
+
+
+class CSVPlugin:
+    def process_output(self, data: list[tuple[int, str]]) -> None:
+        print("CSV Output")
+        csv_str: list[str] = []
+        for element in data:
+            csv_str.append(element[1])
+        print(",".join(csv_str))
 
 
 BATCH: list[Any] = [
