@@ -165,11 +165,24 @@ class DataStream:
 
 class CSVPlugin:
     def process_output(self, data: list[tuple[int, str]]) -> None:
-        print("CSV Output")
+        print("CSV Output:")
         csv_str: list[str] = []
         for element in data:
             csv_str.append(element[1])
         print(",".join(csv_str))
+
+
+class JSONPlugin:
+    def process_output(self, data: list[tuple[int, str]]) -> None:
+        print("JSON Output:")
+        json_dict: dict[str, str] = {}
+        for element in data:
+            json_dict[f"item_{element[0]}"] = element[1]
+        junction = ", ".join(
+            f'"{key}": "{value}"'
+            for key, value in json_dict.items()
+        )
+        print("{" + junction + "}")
 
 
 BATCH: list[Any] = [
@@ -185,38 +198,54 @@ BATCH: list[Any] = [
 ]
 
 
+BATCH2: list[Any] = [
+    21,
+    ['I love AI', 'LLMs are wonderful', 'Stay healthy'],
+    [
+        {'log_level': 'ERROR', 'log_message': '500 server crash'},
+        {'log_level': 'NOTICE',
+         'log_message': 'Certificate expires in 10 days'}
+    ],
+    [32, 42, 64, 84, 128, 168],
+    'World hello'
+]
+
+
 def main() -> None:
-    print("=== Code Nexus - Data Stream ===")
+    print("=== Code Nexus - Data Pipeline ===")
     print()
     print("Initialize Data Stream...")
     dstream = DataStream()
     dstream.print_processors_stats()
     print()
-    print("Registering Numeric Processor")
+    print("Registering Processors")
     print()
     nproc = NumericProcessor()
     tproc = TextProcessor()
     lproc = LogProcessor()
     dstream.register_processor(nproc)
+    dstream.register_processor(tproc)
+    dstream.register_processor(lproc)
     print("Send first batch of data on stream:", BATCH)
     dstream.process_stream(BATCH)
     dstream.print_processors_stats()
     print()
-    print("Registering other data processors")
-    dstream.register_processor(tproc)
-    dstream.register_processor(lproc)
-    print("Send the same batch again")
-    dstream.process_stream(BATCH)
+    print("Send 3 processed data from each processor to a CSV plugin:")
+    csvp = CSVPlugin()
+    dstream.output_pipeline(3, csvp)
+    print()
     dstream.print_processors_stats()
     print()
-    print("Consume some elements from the data processors:",
-          "Numeric 3, Text 2, Log 1")
-    for _ in range(3):
-        nproc.output()
-    for _ in range(2):
-        tproc.output()
-    lproc.output()
+    print("Send another batch of data:", BATCH2)
+    dstream.process_stream(BATCH2)
     dstream.print_processors_stats()
+    print()
+    print("Send 5 processed data from each processor to a JSON plugin:")
+    jsonp = JSONPlugin()
+    dstream.output_pipeline(5, jsonp)
+    print()
+    dstream.print_processors_stats()
+    print()
 
 
 if __name__ == "__main__":
